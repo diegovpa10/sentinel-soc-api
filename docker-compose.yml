@@ -1,0 +1,62 @@
+services:
+  postgres_soc:
+    image: postgres:16-alpine
+    container_name: postgres_soc
+    restart: always
+    environment:
+      POSTGRES_USER: soc_admin
+      POSTGRES_PASSWORD: soc_password123
+      POSTGRES_DB: soc_relacional
+    ports:
+      - "5432:5432"
+    networks:
+      - soc_net
+
+  mongo_soc:
+    image: mongo:7.0
+    container_name: mongo_soc
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: soc_admin
+      MONGO_INITDB_ROOT_PASSWORD: soc_password123
+    ports:
+      - "27017:27017"
+    networks:
+      - soc_net
+
+  redis_soc:
+    image: redis:7-alpine
+    container_name: redis_soc
+    restart: always
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    networks:
+      - soc_net
+
+  web_api:
+    build: .
+    container_name: web_api
+    restart: always
+    environment:
+      POSTGRES_HOST: postgres_soc
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: soc_admin
+      POSTGRES_PASSWORD: soc_password123
+      POSTGRES_DB: soc_relacional
+      MONGO_URI: mongodb://soc_admin:soc_password123@mongo_soc:27017/?authSource=admin
+      MONGO_DB_NAME: soc_documental
+      REDIS_HOST: redis_soc
+      REDIS_PORT: 6379
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres_soc
+      - mongo_soc
+      - redis_soc
+    networks:
+      - soc_net
+
+networks:
+  soc_net:
+    driver: bridge
